@@ -1,9 +1,9 @@
 // T&B Paving — warm, trustworthy brand palette
 export const C = {
-  brand: "#C2703D",        // terracotta (their peachy-orange, richer for contrast)
-  brandDark: "#A1542A",
-  accent: "#E9A672",       // soft peach
-  accentSoft: "#F6E4D3",
+  brand: "#FC6A03",        // chosen blaze orange (accents, icons, highlights)
+  brandDark: "#D45700",    // deeper shade for buttons/gradients (readable white text)
+  accent: "#FF9A4D",       // lighter orange
+  accentSoft: "#FFE7D2",   // soft orange tint
   ink: "#1E1B18",          // warm near-black
   inkSoft: "#4A443D",
   bg: "#FAF6F1",           // warm cream

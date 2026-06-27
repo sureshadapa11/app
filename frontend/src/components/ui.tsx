@@ -23,7 +23,7 @@ export function Logo({ size = 40, showText = true }: { size?: number; showText?:
 export function Btn({ label, onPress, variant = "primary", icon, testID, disabled, loading, style, small }: any) {
   const isPrimary = variant === "primary";
   const isDark = variant === "dark";
-  const bg = disabled ? C.surfaceAlt : isPrimary ? C.brand : isDark ? C.ink : C.surface;
+  const bg = disabled ? C.surfaceAlt : isPrimary ? C.brandDark : isDark ? C.ink : C.surface;
   const fg = isPrimary || isDark ? C.onBrand : C.ink;
   const border = variant === "outline" ? C.ink : "transparent";
   return (
