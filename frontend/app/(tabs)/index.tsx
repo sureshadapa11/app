@@ -4,6 +4,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+import Animated, {
+  useAnimatedScrollHandler, useSharedValue, useAnimatedStyle, interpolate, Extrapolation,
+} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { C, S, R, SHADOW } from "@/src/theme";
 import { Btn, Eyebrow, SectionTitle, Logo, Stars } from "@/src/components/ui";
@@ -16,18 +20,62 @@ export default function Home() {
   const goQuote = () => router.push("/(tabs)/quote");
   const call = () => Linking.openURL(`tel:${BIZ.mobile.replace(/\s/g, "")}`);
 
+  const scrollY = useSharedValue(0);
+  const contentH = useSharedValue(1);
+  const viewH = useSharedValue(1);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+    viewH.value = e.layoutMeasurement.height;
+    contentH.value = e.contentSize.height;
+  });
+
+  const headerShadow = useAnimatedStyle(() => ({
+    shadowOpacity: interpolate(scrollY.value, [0, 36], [0, 0.14], Extrapolation.CLAMP),
+    elevation: interpolate(scrollY.value, [0, 36], [0, 6], Extrapolation.CLAMP),
+  }));
+  const headerBorder = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 36], [0, 1], Extrapolation.CLAMP),
+  }));
+  const progress = useAnimatedStyle(() => {
+    const max = Math.max(contentH.value - viewH.value, 1);
+    return { width: `${interpolate(scrollY.value, [0, max], [0, 100], Extrapolation.CLAMP)}%` };
+  });
+
+  const HEADER_PAD = insets.top + 6;
+
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      {/* Sticky header */}
-      <View style={[styles.topBar, { paddingTop: insets.top + 6 }]}>
-        <Logo size={36} />
-        <Pressable testID="header-call-btn" onPress={call} style={styles.callPill}>
-          <Ionicons name="call" size={15} color={C.onBrand} />
-          <Text style={styles.callPillText}>CALL</Text>
-        </Pressable>
-      </View>
+      {/* Frosted glass sticky header */}
+      <Animated.View style={[styles.header, { paddingTop: HEADER_PAD }, headerShadow]}>
+        <BlurView intensity={28} tint="light" style={StyleSheet.absoluteFill} />
+        <View style={styles.headerTint} />
+        <View style={styles.headerRow}>
+          <Logo size={36} />
+          <View style={styles.headerRight}>
+            <View style={styles.ratingChip}>
+              <Ionicons name="star" size={11} color={C.gold} />
+              <Text style={styles.ratingText}>5.0</Text>
+            </View>
+            <Pressable testID="header-call-btn" onPress={call}>
+              <LinearGradient colors={[C.brand, C.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.callPill}>
+                <Ionicons name="call" size={14} color={C.onBrand} />
+                <Text style={styles.callPillText}>CALL NOW</Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
+        </View>
+        <View style={styles.progressTrack}>
+          <Animated.View style={[styles.progressFill, progress]} />
+        </View>
+        <Animated.View style={[styles.headerHairline, headerBorder]} />
+      </Animated.View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: S["3xl"] }} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: S["3xl"] }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Hero */}
         <View style={styles.hero}>
           <Image source={{ uri: HERO_IMG }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
@@ -155,15 +203,23 @@ export default function Home() {
           </Pressable>
           <Text style={styles.footerCopy}>© 2026 T&B Paving. All rights reserved.</Text>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.lg, paddingBottom: 10, backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.border, zIndex: 10 },
-  callPill: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.brand, paddingHorizontal: S.md, paddingVertical: 8, borderRadius: R.pill },
+  header: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 20, overflow: "hidden", backgroundColor: "transparent", shadowColor: "#3A2A1A", shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
+  headerTint: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(255,255,255,0.82)" },
+  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.lg, paddingBottom: 10 },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: S.sm },
+  ratingChip: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "rgba(0,0,0,0.05)", paddingHorizontal: 8, paddingVertical: 5, borderRadius: R.pill },
+  ratingText: { fontSize: 12, fontWeight: "800", color: C.ink },
+  callPill: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: S.md, paddingVertical: 9, borderRadius: R.pill },
   callPillText: { color: C.onBrand, fontWeight: "800", fontSize: 12, letterSpacing: 0.5 },
+  progressTrack: { height: 3, backgroundColor: "rgba(0,0,0,0.06)" },
+  progressFill: { height: 3, backgroundColor: C.brand },
+  headerHairline: { position: "absolute", bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: C.border },
   hero: { height: 460, justifyContent: "flex-end" },
   heroContent: { padding: S.xl, paddingBottom: S["2xl"] },
   heroBadge: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,0.12)", paddingHorizontal: S.md, paddingVertical: 7, borderRadius: R.pill, marginBottom: S.md },
