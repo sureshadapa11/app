@@ -1,75 +1,158 @@
-import React, { useCallback, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/src/context/AuthContext";
-import { api } from "@/src/api";
-import { C, S, F } from "@/src/theme";
-
-function Metric({ label, value, color, testID }: any) {
-  return (
-    <View style={[styles.metric, { borderColor: C.borderStrong }]} testID={testID}>
-      <Text style={[styles.metricVal, color && { color }]}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-    </View>
-  );
-}
+import { C, S, R, SHADOW } from "@/src/theme";
+import { Btn, Eyebrow, SectionTitle, Logo, Stars } from "@/src/components/ui";
+import { BIZ, STATS, TRUST, SERVICES, STEPS, HERO_IMG, GALLERY, TESTIMONIALS } from "@/src/brand";
 
 export default function Home() {
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
   const router = useRouter();
-  const [d, setD] = useState<any>(null);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
-    try { setD(await api.get("/dashboard")); } catch {}
-  }, []);
-
-  useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+  const goQuote = () => router.push("/(tabs)/quote");
+  const call = () => Linking.openURL(`tel:${BIZ.mobile.replace(/\s/g, "")}`);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.surface }}>
-      <View style={[styles.header, { paddingTop: insets.top + S.md }]}>
-        <View>
-          <Text style={styles.hello}>WELCOME BACK</Text>
-          <Text style={styles.name}>{(user?.name || "").toUpperCase()}</Text>
-        </View>
-        <Pressable testID="logout-btn" onPress={logout} style={styles.iconBtn}>
-          <Ionicons name="log-out-outline" size={22} color={C.onSurface} />
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      {/* Sticky header */}
+      <View style={[styles.topBar, { paddingTop: insets.top + 6 }]}>
+        <Logo size={36} />
+        <Pressable testID="header-call-btn" onPress={call} style={styles.callPill}>
+          <Ionicons name="call" size={15} color={C.onBrand} />
+          <Text style={styles.callPillText}>CALL</Text>
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: S.lg, paddingBottom: S["3xl"] }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.brand} />}>
-        <View style={styles.grid}>
-          <Metric testID="metric-active" label="ACTIVE SITES" value={d?.active_projects ?? "—"} />
-          <Metric testID="metric-workers" label="CREW MEMBERS" value={d?.workers ?? "—"} />
-          <Metric testID="metric-quotes" label="PENDING BILLS" value={d?.pending_quotes ?? "—"} color={C.brand} />
-          <Metric testID="metric-lowstock" label="LOW STOCK" value={d?.low_stock ?? "—"} color={(d?.low_stock || 0) > 0 ? C.error : C.onSurface} />
-        </View>
-
-        <View style={styles.revenueBox}>
-          <Text style={styles.revenueLabel}>TOTAL REVENUE (PAID)</Text>
-          <Text style={styles.revenueVal}>${(d?.revenue ?? 0).toLocaleString()}</Text>
-        </View>
-
-        <Text style={styles.section}>QUICK ACTIONS</Text>
-        <View style={styles.actions}>
-          {[
-            { t: "NEW PROJECT", i: "add-circle", r: "/(tabs)/projects" },
-            { t: "CREATE BILL", i: "receipt", r: "/(tabs)/billing" },
-            { t: "MANAGE CREW", i: "people", r: "/(tabs)/crew" },
-            { t: "ASK AI", i: "sparkles", r: "/(tabs)/assistant" },
-          ].map((a) => (
-            <Pressable key={a.t} testID={`action-${a.i}`} style={styles.action} onPress={() => router.push(a.r as any)}>
-              <Ionicons name={a.i as any} size={24} color={C.onSurface} />
-              <Text style={styles.actionText}>{a.t}</Text>
+      <ScrollView contentContainerStyle={{ paddingBottom: S["3xl"] }} showsVerticalScrollIndicator={false}>
+        {/* Hero */}
+        <View style={styles.hero}>
+          <Image source={{ uri: HERO_IMG }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
+          <LinearGradient colors={["rgba(20,15,10,0.35)", "rgba(20,15,10,0.85)"]} style={StyleSheet.absoluteFill} />
+          <View style={styles.heroContent}>
+            <View style={styles.heroBadge}>
+              <Ionicons name="shield-checkmark" size={13} color={C.accent} />
+              <Text style={styles.heroBadgeText}>{BIZ.since.toUpperCase()}</Text>
+            </View>
+            <Text style={styles.heroTitle}>{BIZ.headline}</Text>
+            <Text style={styles.heroSub}>{BIZ.intro}</Text>
+            <View style={styles.heroBtns}>
+              <Btn testID="hero-quote-btn" label="Get a Free Quote" icon="calculator" onPress={goQuote} style={{ flex: 1 }} />
+            </View>
+            <Pressable testID="hero-services-btn" onPress={() => router.push("/(tabs)/services")} style={styles.heroLink}>
+              <Text style={styles.heroLinkText}>View Our Services</Text>
+              <Ionicons name="arrow-forward" size={16} color={C.surface} />
             </Pressable>
+          </View>
+        </View>
+
+        {/* Stats */}
+        <View style={styles.statsRow}>
+          {STATS.map((s) => (
+            <View key={s.label} style={styles.stat}>
+              <Text style={styles.statVal}>{s.value}</Text>
+              <Text style={styles.statLabel}>{s.label}</Text>
+            </View>
           ))}
+        </View>
+
+        {/* Trust badges */}
+        <View style={styles.section}>
+          <View style={styles.trustWrap}>
+            {TRUST.map((t) => (
+              <View key={t.label} style={styles.trustChip}>
+                <Ionicons name={t.icon as any} size={16} color={C.brand} />
+                <Text style={styles.trustText}>{t.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Services preview */}
+        <View style={styles.section}>
+          <Eyebrow>What We Offer</Eyebrow>
+          <SectionTitle>Our Paving Services</SectionTitle>
+          <View style={{ marginTop: S.lg, gap: S.md }}>
+            {SERVICES.slice(0, 4).map((sv) => (
+              <Pressable key={sv.id} testID={`home-service-${sv.id}`} style={styles.svCard} onPress={() => router.push("/(tabs)/services")}>
+                <View style={styles.svIcon}><Ionicons name={sv.icon as any} size={22} color={C.brand} /></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.svTitle}>{sv.title}</Text>
+                  <Text style={styles.svDesc} numberOfLines={2}>{sv.desc}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={C.muted} />
+              </Pressable>
+            ))}
+          </View>
+          <Btn testID="home-all-services" label="See All 11 Services" variant="outline" onPress={() => router.push("/(tabs)/services")} style={{ marginTop: S.lg }} />
+        </View>
+
+        {/* How it works */}
+        <View style={[styles.section, styles.darkBand]}>
+          <Eyebrow>How It Works</Eyebrow>
+          <SectionTitle light>Our Simple 4-Step Process</SectionTitle>
+          <View style={{ marginTop: S.lg, gap: S.md }}>
+            {STEPS.map((st) => (
+              <View key={st.n} style={styles.step}>
+                <View style={styles.stepNum}><Text style={styles.stepNumText}>{st.n}</Text></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.stepTitle}>{st.title}</Text>
+                  <Text style={styles.stepDesc}>{st.desc}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Work preview */}
+        <View style={styles.section}>
+          <Eyebrow>Our Work</Eyebrow>
+          <SectionTitle>Recent Projects</SectionTitle>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: S.md, paddingTop: S.lg }}>
+            {GALLERY.slice(0, 5).map((g, i) => (
+              <Pressable key={i} testID={`home-gallery-${i}`} onPress={() => router.push("/(tabs)/gallery")} style={styles.workCard}>
+                <Image source={{ uri: g.img }} style={styles.workImg} contentFit="cover" transition={200} />
+                <Text style={styles.workLabel}>{g.label}</Text>
+                <Text style={styles.workTown}>{g.town}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Testimonial */}
+        <View style={styles.section}>
+          <View style={styles.quoteCard}>
+            <Stars n={5} size={18} />
+            <Text style={styles.quoteText}>“{TESTIMONIALS[0].text}”</Text>
+            <Text style={styles.quoteName}>{TESTIMONIALS[0].name} · {TESTIMONIALS[0].town}</Text>
+            <Pressable testID="home-reviews-link" onPress={() => router.push("/(tabs)/reviews")}>
+              <Text style={styles.quoteLink}>Read more reviews →</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* CTA band */}
+        <View style={[styles.section, styles.ctaBand]}>
+          <Text style={styles.ctaTitle}>Ready for a free, no-obligation quote?</Text>
+          <Text style={styles.ctaSub}>Covering {BIZ.area} · {BIZ.hours}</Text>
+          <Btn testID="cta-quote-btn" label="Get a Free Quote" icon="calculator" onPress={goQuote} variant="dark" style={{ marginTop: S.md }} />
+          <Pressable testID="cta-call-btn" onPress={call} style={styles.ctaCall}>
+            <Ionicons name="call" size={16} color={C.ink} />
+            <Text style={styles.ctaCallText}>{BIZ.phone}  ·  {BIZ.mobile}</Text>
+          </Pressable>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Logo size={40} />
+          <Text style={styles.footerText}>Expert driveways, patios & paths across {BIZ.area}. Trusted since 2009.</Text>
+          <Text style={styles.footerMeta}>{BIZ.email}</Text>
+          <Pressable testID="admin-link" onPress={() => router.push("/admin")}>
+            <Text style={styles.footerAdmin}>Staff Login</Text>
+          </Pressable>
+          <Text style={styles.footerCopy}>© 2026 T&B Paving. All rights reserved.</Text>
         </View>
       </ScrollView>
     </View>
@@ -77,19 +160,52 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", paddingHorizontal: S.lg, paddingBottom: S.md, borderBottomWidth: 2, borderBottomColor: C.borderStrong },
-  hello: { fontSize: 11, fontWeight: "800", letterSpacing: 1.5, color: C.muted },
-  name: { ...F.display, fontSize: 26, color: C.onSurface },
-  iconBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: C.borderStrong },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: S.md },
-  metric: { width: "47.5%", flexGrow: 1, borderWidth: 2, padding: S.lg, backgroundColor: C.surface },
-  metricVal: { ...F.display, fontSize: 38, color: C.onSurface },
-  metricLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, color: C.muted, marginTop: 4 },
-  revenueBox: { backgroundColor: C.onSurface, padding: S.lg, marginTop: S.md, borderWidth: 2, borderColor: C.borderStrong },
-  revenueLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1.5, color: C.brandTertiary },
-  revenueVal: { ...F.display, fontSize: 40, color: C.onSurfaceInverse, marginTop: 4 },
-  section: { ...F.heavy, fontSize: 14, letterSpacing: 1, color: C.onSurface, marginTop: S.xl, marginBottom: S.md },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: S.md },
-  action: { width: "47.5%", flexGrow: 1, borderWidth: 2, borderColor: C.borderStrong, padding: S.lg, gap: S.sm },
-  actionText: { fontWeight: "800", letterSpacing: 0.5, color: C.onSurface },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: S.lg, paddingBottom: 10, backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.border, zIndex: 10 },
+  callPill: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.brand, paddingHorizontal: S.md, paddingVertical: 8, borderRadius: R.pill },
+  callPillText: { color: C.onBrand, fontWeight: "800", fontSize: 12, letterSpacing: 0.5 },
+  hero: { height: 460, justifyContent: "flex-end" },
+  heroContent: { padding: S.xl, paddingBottom: S["2xl"] },
+  heroBadge: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,0.12)", paddingHorizontal: S.md, paddingVertical: 7, borderRadius: R.pill, marginBottom: S.md },
+  heroBadgeText: { color: C.accent, fontWeight: "800", fontSize: 11, letterSpacing: 1.5 },
+  heroTitle: { color: C.surface, fontSize: 34, fontWeight: "900", lineHeight: 39, letterSpacing: -0.8 },
+  heroSub: { color: "rgba(255,255,255,0.88)", fontSize: 15, lineHeight: 22, marginTop: S.md },
+  heroBtns: { flexDirection: "row", marginTop: S.xl },
+  heroLink: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: S.md },
+  heroLinkText: { color: C.surface, fontWeight: "700", fontSize: 14, textDecorationLine: "underline" },
+  statsRow: { flexDirection: "row", backgroundColor: C.ink, paddingVertical: S.lg },
+  stat: { flex: 1, alignItems: "center" },
+  statVal: { color: C.accent, fontSize: 24, fontWeight: "900" },
+  statLabel: { color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "600", marginTop: 2, textAlign: "center" },
+  section: { paddingHorizontal: S.lg, paddingVertical: S.xl },
+  trustWrap: { flexDirection: "row", flexWrap: "wrap", gap: S.sm, justifyContent: "center" },
+  trustChip: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, paddingHorizontal: S.md, paddingVertical: 9, borderRadius: R.pill },
+  trustText: { fontSize: 12, fontWeight: "700", color: C.ink },
+  svCard: { flexDirection: "row", alignItems: "center", gap: S.md, backgroundColor: C.surface, borderRadius: R.lg, padding: S.md, borderWidth: 1, borderColor: C.border, ...SHADOW.card },
+  svIcon: { width: 46, height: 46, borderRadius: R.md, backgroundColor: C.accentSoft, alignItems: "center", justifyContent: "center" },
+  svTitle: { fontSize: 15, fontWeight: "800", color: C.ink },
+  svDesc: { fontSize: 12.5, color: C.muted, marginTop: 2, lineHeight: 17 },
+  darkBand: { backgroundColor: C.ink },
+  step: { flexDirection: "row", gap: S.md, alignItems: "flex-start" },
+  stepNum: { width: 44, height: 44, borderRadius: R.md, backgroundColor: C.brand, alignItems: "center", justifyContent: "center" },
+  stepNumText: { color: C.onBrand, fontWeight: "900", fontSize: 16 },
+  stepTitle: { color: C.surface, fontSize: 16, fontWeight: "800" },
+  stepDesc: { color: "rgba(255,255,255,0.72)", fontSize: 13, marginTop: 3, lineHeight: 19 },
+  workCard: { width: 220 },
+  workImg: { width: 220, height: 150, borderRadius: R.lg, backgroundColor: C.surfaceAlt },
+  workLabel: { fontSize: 14, fontWeight: "800", color: C.ink, marginTop: S.sm },
+  workTown: { fontSize: 12, color: C.muted },
+  quoteCard: { backgroundColor: C.surface, borderRadius: R.xl, padding: S.xl, borderWidth: 1, borderColor: C.border, ...SHADOW.card },
+  quoteText: { fontSize: 17, color: C.ink, lineHeight: 25, marginTop: S.md, fontStyle: "italic" },
+  quoteName: { fontSize: 13, fontWeight: "800", color: C.brand, marginTop: S.md },
+  quoteLink: { fontSize: 13, fontWeight: "700", color: C.inkSoft, marginTop: S.md },
+  ctaBand: { backgroundColor: C.accentSoft, margin: S.lg, borderRadius: R.xl, alignItems: "center" },
+  ctaTitle: { fontSize: 22, fontWeight: "900", color: C.ink, textAlign: "center", letterSpacing: -0.5 },
+  ctaSub: { fontSize: 13, color: C.inkSoft, marginTop: 6, textAlign: "center" },
+  ctaCall: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: S.md },
+  ctaCallText: { fontSize: 14, fontWeight: "800", color: C.ink },
+  footer: { backgroundColor: C.ink, padding: S.xl, alignItems: "center" },
+  footerText: { color: "rgba(255,255,255,0.75)", fontSize: 13, textAlign: "center", marginTop: S.md, lineHeight: 19 },
+  footerMeta: { color: C.accent, fontSize: 13, fontWeight: "700", marginTop: S.sm },
+  footerAdmin: { color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: S.lg, textDecorationLine: "underline" },
+  footerCopy: { color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: S.md },
 });

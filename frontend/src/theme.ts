@@ -1,50 +1,31 @@
-// BuildPro Brutalist design tokens
+// T&B Paving — warm, trustworthy brand palette
 export const C = {
+  brand: "#C2703D",        // terracotta (their peachy-orange, richer for contrast)
+  brandDark: "#A1542A",
+  accent: "#E9A672",       // soft peach
+  accentSoft: "#F6E4D3",
+  ink: "#1E1B18",          // warm near-black
+  inkSoft: "#4A443D",
+  bg: "#FAF6F1",           // warm cream
   surface: "#FFFFFF",
-  onSurface: "#111111",
-  surfaceSecondary: "#F4F4F5",
-  onSurfaceSecondary: "#18181B",
-  surfaceTertiary: "#E4E4E7",
-  surfaceInverse: "#111111",
-  onSurfaceInverse: "#FFFFFF",
-  brand: "#EA580C",
+  surfaceAlt: "#F2EBE2",
+  muted: "#857C72",
+  border: "#EBE2D6",
+  gold: "#E0A732",         // stars
+  success: "#2E7D32",
+  error: "#C0392B",
   onBrand: "#FFFFFF",
-  brandTertiary: "#F97316",
-  success: "#16A34A",
-  warning: "#EAB308",
-  error: "#DC2626",
-  info: "#2563EB",
-  border: "#E4E4E7",
-  borderStrong: "#111111",
-  muted: "#71717A",
 };
 
 export const S = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, "2xl": 32, "3xl": 48 };
+export const R = { sm: 10, md: 14, lg: 20, xl: 28, pill: 999 };
 
-export const F = {
-  // Brutalist: heavy weight + tight tracking; system font fallback
-  display: { fontWeight: "900" as const, letterSpacing: -0.5 },
-  heavy: { fontWeight: "800" as const },
-  mono: { fontFamily: "monospace" as const },
-};
-
-export const statusColor = (s: string) => {
-  switch (s) {
-    case "active":
-    case "in_progress":
-    case "present":
-    case "sent":
-      return C.info;
-    case "completed":
-    case "done":
-    case "paid":
-      return C.success;
-    case "on_hold":
-    case "half_day":
-      return C.warning;
-    case "absent":
-      return C.error;
-    default:
-      return C.muted;
-  }
+export const SHADOW = {
+  card: {
+    shadowColor: "#3A2A1A",
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
 };

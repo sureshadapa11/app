@@ -162,6 +162,21 @@ class EstimateBody(BaseModel):
     location: str = ""
 
 
+class EnquiryBody(BaseModel):
+    name: str
+    phone: str = ""
+    email: str = ""
+    service: str = ""
+    message: str = ""
+
+
+class PavingEstimateBody(BaseModel):
+    service: str
+    area: str = ""
+    material: str = ""
+    notes: str = ""
+
+
 # ---------- Auth Routes ----------
 @api_router.post("/auth/register")
 async def register(body: RegisterBody):
@@ -413,6 +428,57 @@ async def dashboard(user=Depends(get_current_user)):
         "revenue": round(revenue, 2),
         "low_stock": low_stock,
     }
+
+
+# ---------- Enquiries (public lead capture) ----------
+@api_router.post("/enquiries")
+async def create_enquiry(body: EnquiryBody):
+    doc = body.dict()
+    doc.update({"id": oid(), "status": "new", "created_at": now_iso()})
+    await db.enquiries.insert_one(doc)
+    return {"ok": True, "id": doc["id"]}
+
+
+@api_router.get("/enquiries")
+async def list_enquiries(user=Depends(get_current_user)):
+    docs = await db.enquiries.find().sort("created_at", -1).to_list(1000)
+    return [clean(d) for d in docs]
+
+
+@api_router.put("/enquiries/{eid}/status")
+async def update_enquiry(eid: str, status: str, user=Depends(get_current_user)):
+    await db.enquiries.update_one({"id": eid}, {"$set": {"status": status}})
+    return {"ok": True}
+
+
+@api_router.post("/ai/paving-estimate")
+async def paving_estimate(body: PavingEstimateBody):
+    prompt = (
+        "You are an expert UK paving and driveway estimator for T&B Paving (Manchester & North West). "
+        "Give a friendly, realistic BALLPARK estimate in GBP (£) for the following job. "
+        "Use typical UK 2026 market rates.\n\n"
+        f"Service: {body.service}\n"
+        f"Approx area: {body.area or 'not specified'}\n"
+        f"Preferred material: {body.material or 'not specified'}\n"
+        f"Notes: {body.notes or 'none'}\n\n"
+        "Respond in this exact short format (plain text, no markdown symbols):\n"
+        "ESTIMATE: £low - £high\n"
+        "WHAT'S INCLUDED: 2-3 short bullet lines\n"
+        "TIMELINE: x-y days\n"
+        "Then 1 line: 'This is a guide only - book a free site survey for an exact quote.'\n"
+        "Keep it under 130 words."
+    )
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"paving-estimate-{oid()}",
+        system_message="You are a helpful, honest UK paving cost estimator.",
+    ).with_model("openai", "gpt-5.4")
+    try:
+        reply = await chat.send_message(UserMessage(text=prompt))
+    except Exception as e:
+        logger.error(f"Paving estimate error: {e}")
+        raise HTTPException(status_code=500, detail="AI service error")
+    return {"estimate": reply}
 
 
 # ---------- AI ----------

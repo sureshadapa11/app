@@ -1,0 +1,42 @@
+{
+  "summary": "T&B Paving customer site tested end-to-end. Backend pytest: 9/9 PASS (test_tbpaving_api.py): public POST /api/enquiries (200 ok+id), GET /api/enquiries requires auth (401), GET /api/enquiries (auth) returns list incl. created enquiry with no _id leak, PUT /api/enquiries/{id}/status?status=contacted persists correctly, POST /api/ai/paving-estimate returns text containing £ figures (gpt-5.4 via Emergent LLM works - top-up confirmed), admin login admin@tbpaving.co.uk/paving2009 works, wrong password 401. Frontend (390x844 mobile viewport): all 5 bottom tabs render and navigate (Home/Services/Our Work/Reviews/Get Quote). Home: hero-quote-btn, hero-services-btn, header-call-btn, cta-quote-btn, admin-link all visible. Services: 11 service cards (service-block-paving..service-paths) + services-quote-btn render. Our Work: 8 gallery-item-N render, viewer-close opens/closes fullscreen. Reviews: faq-0 expands. Quote (KEY conversion flow): est-run + est-area + chips + Get Instant Estimate returns est-result containing 'ESTIMATE: £2,700 - £4,200' with full What's Included / Timeline lines; enquiry form submit shows enquiry-success ('Thanks, TEST_UI!') and the enquiry appears in /admin dashboard. Admin: /admin route loads login screen, login succeeds, 4 enquiry cards rendered with done-<uuid> buttons, Mark Done calls PUT /enquiries/{id}/status (verified 200), logout returns to login screen.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /", "issue": "Root path returns 404 (only /api/* is mounted) - same as previous iteration, low priority."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Home", "issues": ["Clean mobile layout - hero image, stats, trust chips and CTAs all readable; tab bar with 5 icons fits 390px width without crowding."]},
+      {"screen": "Quote", "issues": ["AI estimate result card uses brand peach background with good contrast on £ figures."]},
+      {"screen": "Admin (login)", "issues": ["Centered logo, large 44px+ touch targets, Back to site link present."]}
+    ],
+    "react_native_issues": [
+      {"component": "shadow* style props", "issue": "Console warning on web: '\"shadow*\" style props are deprecated. Use \"boxShadow\".' - emitted by react-native-web from theme SHADOW.card usage. Reference: /app/frontend/src/theme.ts (SHADOW.card spread into styles in index/services/gallery/quote/admin). Cosmetic on web preview only; harmless on native iOS/Android."},
+      {"component": "View pointerEvents prop", "issue": "Console warning: 'props.pointerEvents is deprecated. Use style.pointerEvents.' Likely from a Tabs/SafeAreaProvider dependency, not authored code; cosmetic."}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_tbpaving_api.py", "/app/test_reports/pytest/iter2.xml"],
+  "action_items": [
+    "(Low / cosmetic) Migrate SHADOW.card in /app/frontend/src/theme.ts to use boxShadow on web (or wrap with Platform.select) to silence react-native-web deprecation warning.",
+    "(Low) Track down the 'props.pointerEvents is deprecated' warning - usually from an older dependency; safe to ignore until upstream fix."
+  ],
+  "critical_code_review_comments": [
+    "server.py still keeps legacy management endpoints (projects/tasks/quotes/workers/inventory/attendance/photos/dashboard/ai/chat/ai/estimate) that the new T&B UI no longer uses. Per main-agent note these are intentional - consider deleting in a future cleanup to reduce attack surface and confusion.",
+    "POST /api/enquiries accepts arbitrary EnquiryBody with all fields optional except name - good for low-friction lead capture; no rate limiting or honeypot, so could be spam-magnet in production. Consider adding a simple captcha/rate limit.",
+    "PUT /api/enquiries/{eid}/status takes 'status' as a query string param (not a JSON body) - works but unusual; frontend uses the same shape so it's consistent.",
+    "JWT secret loaded from env; bcrypt + EmailStr used - good. Admin user was not pre-seeded in DB, but auto-created on first login attempt by test fixture; verify the main agent's seed script (if any) is idempotent across redeploys, otherwise the credentials in test_credentials.md will fail on a fresh DB.",
+    "Quote screen Field component is used multiline for enq-message - confirmed it submits; ensure on iOS the keyboard 'return' submits/dismisses cleanly (KeyboardAvoidingView is in place).",
+    "CORS allow_origins=['*'] with allow_credentials=True is technically invalid per spec - acceptable for dev preview but should be tightened for prod."
+  ],
+  "updated_files": ["/app/backend/tests/test_tbpaving_api.py"],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "100% (all flows in review request verified)"},
+  "seed_data_creation": "Admin user admin@tbpaving.co.uk / paving2009 (role=contractor) is created on first login attempt via the test fixture (idempotent: tries login first, registers only if 401). Several TEST_-prefixed enquiries created via UI + pytest; safe to leave for admin dashboard demo, or purge via Mongo if desired.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend env var is EXPO_PUBLIC_BACKEND_URL (NOT EXPO_BACKEND_URL). Tab text labels: 'Home', 'Services', 'Our Work', 'Reviews', 'Get Quote' (note 'Our Work' may match multiple elements on home screen - use query_selector_all and click last one, or navigate via /gallery URL directly). Gallery tab needs ~3s settle time after click before [data-testid^='gallery-item-'] appears. Admin route: GET /admin (Expo Router). Admin login auto-creates user on first run via backend register endpoint - DO NOT skip the register fallback if testing on a fresh DB. AI endpoint /api/ai/paving-estimate takes ~3-6s; use timeout=120s. Done button testID is dynamic: done-<enquiry-uuid>, find via document.querySelector('[data-testid^=\"done-\"]').",
+  "rca_of_issue": "No bugs to RCA. Initial gallery-item-0 failure during the first UI run was a test-timeout issue (5s wait while tab navigation was still settling) - retest with longer wait + page.url verification showed all 8 gallery items render and viewer-close works."
+}

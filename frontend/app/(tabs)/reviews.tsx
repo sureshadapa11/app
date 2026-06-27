@@ -1,0 +1,114 @@
+import React, { useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { C, S, R, SHADOW } from "@/src/theme";
+import { Eyebrow, Stars, Btn } from "@/src/components/ui";
+import { TESTIMONIALS, REVIEW_PLATFORMS, AREAS, FAQS, BIZ } from "@/src/brand";
+
+export default function Reviews() {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [open, setOpen] = useState<number | null>(0);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={[styles.header, { paddingTop: insets.top + S.md }]}>
+        <Eyebrow>Testimonials</Eyebrow>
+        <Text style={styles.title}>What Our Customers Say</Text>
+      </View>
+      <ScrollView contentContainerStyle={{ paddingBottom: S["3xl"] }} showsVerticalScrollIndicator={false}>
+        {/* Testimonials */}
+        <View style={styles.section}>
+          {TESTIMONIALS.map((t, i) => (
+            <View key={i} testID={`testimonial-${i}`} style={styles.tCard}>
+              <Stars n={t.stars} size={16} />
+              <Text style={styles.tText}>“{t.text}”</Text>
+              <View style={styles.tFooter}>
+                <View style={styles.avatar}><Text style={styles.avatarText}>{t.name[0]}</Text></View>
+                <View>
+                  <Text style={styles.tName}>{t.name}</Text>
+                  <Text style={styles.tJob}>{t.job} · {t.town}</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Review platforms */}
+        <View style={styles.section}>
+          <Text style={styles.smallTitle}>READ OUR REVIEWS ON</Text>
+          <View style={styles.platforms}>
+            {REVIEW_PLATFORMS.map((p) => (
+              <View key={p} style={styles.platform}>
+                <Ionicons name="checkmark-circle" size={14} color={C.success} />
+                <Text style={styles.platformText}>{p}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Coverage */}
+        <View style={[styles.section, styles.coverage]}>
+          <Eyebrow>Coverage</Eyebrow>
+          <Text style={styles.coverageTitle}>Areas We Cover</Text>
+          <Text style={styles.coverageSub}>Proudly serving {BIZ.area}, including:</Text>
+          <View style={styles.areaWrap}>
+            {AREAS.map((a) => (
+              <View key={a} style={styles.areaChip}><Text style={styles.areaText}>{a}</Text></View>
+            ))}
+          </View>
+        </View>
+
+        {/* FAQ */}
+        <View style={styles.section}>
+          <Eyebrow>FAQ</Eyebrow>
+          <Text style={styles.title}>Frequently Asked Questions</Text>
+          <View style={{ marginTop: S.lg, gap: S.sm }}>
+            {FAQS.map((f, i) => (
+              <Pressable key={i} testID={`faq-${i}`} style={styles.faq} onPress={() => setOpen(open === i ? null : i)}>
+                <View style={styles.faqRow}>
+                  <Text style={styles.faqQ}>{f.q}</Text>
+                  <Ionicons name={open === i ? "remove" : "add"} size={20} color={C.brand} />
+                </View>
+                {open === i && <Text style={styles.faqA}>{f.a}</Text>}
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View style={[styles.section, { paddingTop: 0 }]}>
+          <Btn testID="reviews-quote-btn" label="Get a Free Quote" icon="calculator" onPress={() => router.push("/(tabs)/quote")} />
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: { paddingHorizontal: S.lg, paddingBottom: S.md, backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.border },
+  title: { fontSize: 28, fontWeight: "900", color: C.ink, letterSpacing: -0.8, lineHeight: 32 },
+  section: { paddingHorizontal: S.lg, paddingVertical: S.lg, gap: S.md },
+  tCard: { backgroundColor: C.surface, borderRadius: R.lg, padding: S.lg, borderWidth: 1, borderColor: C.border, ...SHADOW.card },
+  tText: { fontSize: 15.5, color: C.ink, lineHeight: 23, marginTop: S.sm, fontStyle: "italic" },
+  tFooter: { flexDirection: "row", alignItems: "center", gap: S.sm, marginTop: S.md },
+  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: C.brand, alignItems: "center", justifyContent: "center" },
+  avatarText: { color: C.onBrand, fontWeight: "900", fontSize: 16 },
+  tName: { fontSize: 14, fontWeight: "800", color: C.ink },
+  tJob: { fontSize: 12, color: C.muted },
+  smallTitle: { fontSize: 12, fontWeight: "800", letterSpacing: 1.5, color: C.muted, textAlign: "center" },
+  platforms: { flexDirection: "row", flexWrap: "wrap", gap: S.sm, justifyContent: "center" },
+  platform: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, paddingHorizontal: S.md, paddingVertical: 8, borderRadius: R.pill },
+  platformText: { fontSize: 13, fontWeight: "700", color: C.ink },
+  coverage: { backgroundColor: C.accentSoft, margin: S.lg, borderRadius: R.xl },
+  coverageTitle: { fontSize: 24, fontWeight: "900", color: C.ink, letterSpacing: -0.5 },
+  coverageSub: { fontSize: 13.5, color: C.inkSoft, marginTop: 2 },
+  areaWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: S.sm },
+  areaChip: { backgroundColor: C.surface, paddingHorizontal: S.md, paddingVertical: 7, borderRadius: R.pill },
+  areaText: { fontSize: 12.5, fontWeight: "600", color: C.ink },
+  faq: { backgroundColor: C.surface, borderRadius: R.md, padding: S.md, borderWidth: 1, borderColor: C.border },
+  faqRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: S.sm },
+  faqQ: { flex: 1, fontSize: 14.5, fontWeight: "700", color: C.ink },
+  faqA: { fontSize: 13.5, color: C.muted, lineHeight: 20, marginTop: S.sm },
+});
